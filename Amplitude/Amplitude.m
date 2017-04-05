@@ -510,12 +510,6 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
     return nil;
 }
-#else
-- (id)getSharedApplication
-{
-    return nil;
-}
-
 #endif
 
 - (void)initializeApiKey:(NSString*) apiKey userId:(NSString*) userId startSession:(BOOL)startSession
@@ -1060,9 +1054,10 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
 
 - (void)enterForeground
 {
-    id app = [self getSharedApplication];
-//do not return without app on osx
+    __unused id app = nil;
+
 #if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
+    app = [self getSharedApplication];
     if (app == nil) {
         return;
     }
@@ -1089,9 +1084,10 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
 
 - (void)enterBackground
 {
-    id app = [self getSharedApplication];
-//do not return without app on osx
+    __unused id app = nil;
+
 #if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
+    app = [self getSharedApplication];
     if (app == nil) {
         return;
     }
