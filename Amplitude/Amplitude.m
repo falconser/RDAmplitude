@@ -472,7 +472,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
 
     if (!_initialized) {
-        SAFE_ARC_RETAIN(apiKey);
+        (void)SAFE_ARC_RETAIN(apiKey);
         SAFE_ARC_RELEASE(_apiKey);
         _apiKey = apiKey;
 
@@ -501,6 +501,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
 }
 
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
 - (UIApplication *)getSharedApplication
 {
     Class UIApplicationClass = NSClassFromString(@"UIApplication");
@@ -509,6 +510,13 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
     return nil;
 }
+#else
+- (id)getSharedApplication
+{
+    return nil;
+}
+
+#endif
 
 - (void)initializeApiKey:(NSString*) apiKey userId:(NSString*) userId startSession:(BOOL)startSession
 {
@@ -1052,10 +1060,13 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
 
 - (void)enterForeground
 {
-    UIApplication *app = [self getSharedApplication];
+    id app = [self getSharedApplication];
+//do not return without app on osx
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
     if (app == nil) {
         return;
     }
+#endif
 
     [self updateLocation];
 
@@ -1078,10 +1089,13 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
 
 - (void)enterBackground
 {
-    UIApplication *app = [self getSharedApplication];
+    id app = [self getSharedApplication];
+//do not return without app on osx
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
     if (app == nil) {
         return;
     }
+#endif
 
     NSNumber* now = [NSNumber numberWithLongLong:[[self currentTime] timeIntervalSince1970] * 1000];
 #if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
@@ -1304,7 +1318,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
     
     [self runOnBackgroundQueue:^{
-        SAFE_ARC_RETAIN(userId);
+        (void)SAFE_ARC_RETAIN(userId);
         SAFE_ARC_RELEASE(_userId);
         _userId = userId;
         (void) [self.dbHelper insertOrReplaceKeyValue:USER_ID value:_userId];
@@ -1346,7 +1360,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
 
     [self runOnBackgroundQueue:^{
-        SAFE_ARC_RETAIN(deviceId);
+        (void)SAFE_ARC_RETAIN(deviceId);
         SAFE_ARC_RELEASE(_deviceId);
         _deviceId = deviceId;
         (void) [self.dbHelper insertOrReplaceKeyValue:DEVICE_ID value:deviceId];
