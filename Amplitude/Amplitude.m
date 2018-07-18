@@ -42,7 +42,9 @@
 #import <net/if.h>
 #import <net/if_dl.h>
 #import <CommonCrypto/CommonDigest.h>
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
 #import <UIKit/UIKit.h>
+#endif
 #include <sys/types.h>
 #include <sys/sysctl.h>
 
@@ -81,8 +83,11 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
 
     BOOL _updateScheduled;
     BOOL _updatingCurrently;
+    
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
     UIBackgroundTaskIdentifier _uploadTaskID;
-
+#endif
+    
     AMPDeviceInfo *_deviceInfo;
     BOOL _useAdvertisingIdForDeviceId;
 
@@ -105,7 +110,14 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     return [Amplitude instanceWithName:nil];
 }
 
-+ (Amplitude *)instanceWithName:(NSString*)instanceName {
++ (Amplitude *)instanceWithName:(NSString*)instanceName
+{
+    NSString *defaultStoragePath = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) objectAtIndex: 0];
+    return [self instanceWithName:instanceName storageDirectoryPath:defaultStoragePath];
+}
+
++ (Amplitude *)instanceWithName:(NSString*) instanceName storageDirectoryPath:(NSString *)directoryPath
+{
     static NSMutableDictionary *_instances = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
@@ -122,7 +134,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     @synchronized(_instances) {
         client = [_instances objectForKey:instanceName];
         if (client == nil) {
-            client = [[self alloc] initWithInstanceName:instanceName];
+            client = [[self alloc] initWithInstanceName:instanceName storageDirectoryPath:directoryPath];
             [_instances setObject:client forKey:instanceName];
             SAFE_ARC_RELEASE(client);
         }
@@ -204,6 +216,12 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
 
 - (id)initWithInstanceName:(NSString*) instanceName
 {
+    NSString *defaultStoragePath = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) objectAtIndex: 0];
+    return [self initWithInstanceName:instanceName storageDirectoryPath:defaultStoragePath];
+}
+
+- (id)initWithInstanceName:(NSString*) instanceName storageDirectoryPath:(NSString *)eventsDataDirectory
+{
     if ([AMPUtils isEmptyString:instanceName]) {
         instanceName = kAMPDefaultInstance;
     }
@@ -247,10 +265,12 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
         [_initializerQueue addOperationWithBlock:^{
             
             _deviceInfo = [[AMPDeviceInfo alloc] init];
-
-            _uploadTaskID = UIBackgroundTaskInvalid;
             
-            NSString *eventsDataDirectory = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) objectAtIndex: 0];
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
+            _uploadTaskID = UIBackgroundTaskInvalid;
+#endif
+            
+            NSParameterAssert(eventsDataDirectory);
             NSString *propertyListPath = [eventsDataDirectory stringByAppendingPathComponent:@"com.amplitude.plist"];
             if (![_instanceName isEqualToString:kAMPDefaultInstance]) {
                 propertyListPath = [NSString stringWithFormat:@"%@_%@", propertyListPath, _instanceName]; // namespace pList with instance name
@@ -382,6 +402,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
 
 - (void) addObservers
 {
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     [center addObserver:self
                selector:@selector(enterForeground)
@@ -391,13 +412,16 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
                selector:@selector(enterBackground)
                    name:UIApplicationDidEnterBackgroundNotification
                  object:nil];
+#endif
 }
 
 - (void) removeObservers
 {
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
     [center removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
     [center removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
+#endif
 }
 
 - (void) dealloc {
@@ -461,7 +485,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
 
     if (!_initialized) {
-        SAFE_ARC_RETAIN(apiKey);
+        (void)SAFE_ARC_RETAIN(apiKey);
         SAFE_ARC_RELEASE(_apiKey);
         _apiKey = apiKey;
 
@@ -473,6 +497,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
             }
         }];
 
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
         UIApplication *app = [self getSharedApplication];
         if (app != nil) {
             UIApplicationState state = app.applicationState;
@@ -482,10 +507,14 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
                 [self enterForeground];
             }
         }
+#else
+    [self enterForeground];
+#endif
         _initialized = YES;
     }
 }
 
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
 - (UIApplication *)getSharedApplication
 {
     Class UIApplicationClass = NSClassFromString(@"UIApplication");
@@ -494,6 +523,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
     return nil;
 }
+#endif
 
 - (void)initializeApiKey:(NSString*) apiKey userId:(NSString*) userId startSession:(BOOL)startSession
 {
@@ -1014,7 +1044,9 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
             int limit = _backoffUpload ? _backoffUploadBatchSize : 0;
             [self uploadEventsWithLimit:limit];
 
-        } else if (_uploadTaskID != UIBackgroundTaskInvalid) {
+        }
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
+        else if (_uploadTaskID != UIBackgroundTaskInvalid) {
             if (uploadSuccessful) {
                 _backoffUpload = NO;
                 _backoffUploadBatchSize = self.eventUploadMaxBatchSize;
@@ -1027,6 +1059,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
                 _uploadTaskID = UIBackgroundTaskInvalid;
             }
         }
+#endif
     }];
 }
 
@@ -1034,20 +1067,27 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
 
 - (void)enterForeground
 {
-    UIApplication *app = [self getSharedApplication];
+    __unused id app = nil;
+
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
+    app = [self getSharedApplication];
     if (app == nil) {
         return;
     }
+#endif
 
     [self updateLocation];
 
     NSNumber* now = [NSNumber numberWithLongLong:[[self currentTime] timeIntervalSince1970] * 1000];
 
     // Stop uploading
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
     if (_uploadTaskID != UIBackgroundTaskInvalid) {
         [app endBackgroundTask:_uploadTaskID];
         _uploadTaskID = UIBackgroundTaskInvalid;
     }
+#endif
+    
     [self runOnBackgroundQueue:^{
         [self startOrContinueSession:now];
         _inForeground = YES;
@@ -1057,13 +1097,17 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
 
 - (void)enterBackground
 {
-    UIApplication *app = [self getSharedApplication];
+    __unused id app = nil;
+
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
+    app = [self getSharedApplication];
     if (app == nil) {
         return;
     }
+#endif
 
     NSNumber* now = [NSNumber numberWithLongLong:[[self currentTime] timeIntervalSince1970] * 1000];
-
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
     // Stop uploading
     if (_uploadTaskID != UIBackgroundTaskInvalid) {
         [app endBackgroundTask:_uploadTaskID];
@@ -1075,6 +1119,8 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
             _uploadTaskID = UIBackgroundTaskInvalid;
         }
     }];
+#endif
+    
     [self runOnBackgroundQueue:^{
         _inForeground = NO;
         [self refreshSessionTime:now];
@@ -1281,7 +1327,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
     
     [self runOnBackgroundQueue:^{
-        SAFE_ARC_RETAIN(userId);
+        (void)SAFE_ARC_RETAIN(userId);
         SAFE_ARC_RELEASE(_userId);
         _userId = userId;
         (void) [self.dbHelper insertOrReplaceKeyValue:USER_ID value:_userId];
@@ -1323,7 +1369,7 @@ static NSString *const SEQUENCE_NUMBER = @"sequence_number";
     }
 
     [self runOnBackgroundQueue:^{
-        SAFE_ARC_RETAIN(deviceId);
+        (void)SAFE_ARC_RETAIN(deviceId);
         SAFE_ARC_RELEASE(_deviceId);
         _deviceId = deviceId;
         (void) [self.dbHelper insertOrReplaceKeyValue:DEVICE_ID value:deviceId];

@@ -125,6 +125,19 @@
  */
 + (Amplitude *)instanceWithName:(NSString*) instanceName;
 
+
+/**
+ This fetches a named SDK instance. Use this if logging events to multiple Amplitude apps.
+ 
+ @param instanceName the name of the SDK instance to fetch.
+ @param stoageDirectoryPath the path to a directory to store amplitude's database and meta. Should not be nil
+ 
+ @returns the Amplitude SDK instance corresponding to `instanceName`
+ 
+ @see [Tracking Events to Multiple Amplitude Apps](https://github.com/amplitude/amplitude-ios#tracking-events-to-multiple-amplitude-apps)
+ */
++ (Amplitude *)instanceWithName:(NSString*) instanceName storageDirectoryPath:(NSString *)directory;
+
 /**-----------------------------------------------------------------------------
  * @name Initialize the Amplitude SDK with your Amplitude API Key
  * -----------------------------------------------------------------------------
@@ -254,7 +267,7 @@
 
  Tracks revenue. This allows us to automatically display data relevant to revenue on the Amplitude website, including average revenue per daily active user (ARPDAU), 7, 30, and 90 day revenue, lifetime value (LTV) estimates, and revenue by advertising campaign cohort and daily/weekly/monthly cohorts.
 
- @param productidentifier        The identifier for the product in the transaction, e.g. "com.amplitude.productId"
+ @param productIdentifier        The identifier for the product in the transaction, e.g. "com.amplitude.productId"
  @param quantity                 The number of products in the transaction. Revenue amount is calculated as quantity * price
  @param price                    The price of the products in the transaction. Revenue amount is calculated as quantity * price
 
@@ -270,7 +283,7 @@
 
  For validating revenue, use [[Amplitude instance] logRevenue:@"com.company.app.productId" quantity:1 price:[NSNumber numberWithDouble:3.99] receipt:transactionReceipt]
 
- @param productidentifier        The identifier for the product in the transaction, e.g. "com.amplitude.productId"
+ @param productIdentifier        The identifier for the product in the transaction, e.g. "com.amplitude.productId"
  @param quantity                 The number of products in the transaction. Revenue amount is calculated as quantity * price
  @param price                    The price of the products in the transaction. Revenue amount is calculated as quantity * price
  @param receipt                  The receipt data from the App Store. Required if you want to verify this revenue event.
@@ -288,7 +301,7 @@
 
  To track revenue from a user, create an AMPRevenue object each time the user generates revenue, and set the revenue properties (productIdentifier, price, quantity). logRevenuev2: takes in an AMPRevenue object. This allows us to automatically display data relevant to revenue on the Amplitude website, including average revenue per daily active user (ARPDAU), 7, 30, and 90 day revenue, lifetime value (LTV) estimates, and revenue by advertising campaign cohort and daily/weekly/monthly cohorts.
 
- @param AMPRevenue object       revenue object contains all revenue information
+ @param revenue object       revenue object contains all revenue information
 
  @see [Tracking Revenue](https://github.com/amplitude/Amplitude-iOS#tracking-revenue)
  */

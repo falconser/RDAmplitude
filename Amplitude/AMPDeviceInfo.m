@@ -5,7 +5,11 @@
 #import "AMPARCMacros.h"
 #import "AMPDeviceInfo.h"
 #import "AMPUtils.h"
+
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
 #import <UIKit/UIKit.h>
+#endif
+
 #import <sys/sysctl.h>
 
 #include <sys/types.h>
@@ -62,10 +66,12 @@
 }
 
 -(NSString*) osVersion {
-    if (!_osVersion) {
-        _osVersion = SAFE_ARC_RETAIN([[UIDevice currentDevice] systemVersion]);
-    }
-    return _osVersion;
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
+        return [[UIDevice currentDevice] systemVersion];
+#else
+        const NSOperatingSystemVersion version = [[NSProcessInfo processInfo] operatingSystemVersion];
+        return [NSString stringWithFormat:@"%@.%@.%@", @(version.majorVersion), @(version.minorVersion), @(version.patchVersion)];
+#endif
 }
 
 -(NSString*) manufacturer {
@@ -122,7 +128,7 @@
 
 -(NSString*) advertiserID {
     if (!_advertiserID) {
-        if ([[[UIDevice currentDevice] systemVersion] floatValue] >= (float) 6.0) {
+        if ([[self osVersion] floatValue] >= (float) 6.0) {
             NSString *advertiserId = [AMPDeviceInfo getAdvertiserID:5];
             if (advertiserId != nil &&
                 ![advertiserId isEqualToString:@"00000000-0000-0000-0000-000000000000"]) {
@@ -135,7 +141,7 @@
 
 -(NSString*) vendorID {
     if (!_vendorID) {
-        if ([[[UIDevice currentDevice] systemVersion] floatValue] >= (float) 6.0) {
+        if ([[self osVersion] floatValue] >= (float) 6.0) {
             NSString *identifierForVendor = [AMPDeviceInfo getVendorID:5];
             if (identifierForVendor != nil &&
                 ![identifierForVendor isEqualToString:@"00000000-0000-0000-0000-000000000000"]) {
@@ -180,6 +186,7 @@
 
 + (NSString*)getVendorID:(int) maxAttempts
 {
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
     NSString *identifier = [[[UIDevice currentDevice] identifierForVendor] UUIDString];
     if (identifier == nil && maxAttempts > 0) {
         // Try again every 5 seconds
@@ -188,6 +195,14 @@
     } else {
         return identifier;
     }
+#else
+    io_registry_entry_t ioRegistryRootEntry = IORegistryEntryFromPath(kIOMasterPortDefault, "IOService:/");
+    CFStringRef cfstrUuid = (CFStringRef)IORegistryEntryCreateCFProperty(ioRegistryRootEntry, CFSTR(kIOPlatformUUIDKey), kCFAllocatorDefault, 0);
+    IOObjectRelease(ioRegistryRootEntry);
+    NSString *uuid = (__bridge_transfer NSString *)cfstrUuid;
+    
+    return uuid;
+#endif
 }
 
 - (NSString*)generateUUID

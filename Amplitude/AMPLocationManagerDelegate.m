@@ -17,6 +17,7 @@
 
 - (void)locationManager:(CLLocationManager*) manager didChangeAuthorizationStatus:(CLAuthorizationStatus) status
 {
+#if (TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE)
     // kCLAuthorizationStatusAuthorized is deprecated in iOS 8. Add support for
     // the new location authorization types if we're compiling for iOS 8 or higher.
 #ifdef __IPHONE_8_0
@@ -27,6 +28,7 @@
         SEL updateLocation = NSSelectorFromString(@"updateLocation");
         [Amplitude performSelector:updateLocation];
     }
+#endif
 }
 
 @end
