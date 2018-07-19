@@ -30,9 +30,6 @@
 @synthesize advertiserID = _advertiserID;
 @synthesize vendorID = _vendorID;
 
-
-
-
 -(id) init {
     self = [super init];
     return self;
@@ -321,14 +318,14 @@
     if ([platform isEqualToString:@"iPad6,4"])      return @"iPad Pro";
     if ([platform isEqualToString:@"iPad6,7"])      return @"iPad Pro";
     if ([platform isEqualToString:@"iPad6,8"])      return @"iPad Pro";
-    if ([platform isEqualToString:@"iPad6,11"])     return @"iPad 9.7\" Wi-Fi"; // 5th Gen
-    if ([platform isEqualToString:@"iPad6,12"])     return @"iPad 9.7\" 3G";    // 5th Gen
+    if ([platform isEqualToString:@"iPad6,11"])     return @"iPad 9.7\" Wi-Fi (5th Gen)";
+    if ([platform isEqualToString:@"iPad6,12"])     return @"iPad 9.7\" 3G (5th Gen)";
     if ([platform isEqualToString:@"iPad7,1"])      return @"iPad Pro 12.9\" Wi-Fi";
     if ([platform isEqualToString:@"iPad7,2"])      return @"iPad Pro 12.9\" 3G";
     if ([platform isEqualToString:@"iPad7,3"])      return @"iPad Pro 10.5\" Wi-Fi";
     if ([platform isEqualToString:@"iPad7,4"])      return @"iPad Pro 10.5\" 3G";
-    if ([platform isEqualToString:@"iPad7,5"])      return @"iPad 9.7\" Wi-Fi"; // 6th Gen
-    if ([platform isEqualToString:@"iPad7,6"])      return @"iPad 9.7\" 3G";    // 6th Gen
+    if ([platform isEqualToString:@"iPad7,5"])      return @"iPad 9.7\" Wi-Fi (6th Gen)";
+    if ([platform isEqualToString:@"iPad7,6"])      return @"iPad 9.7\" 3G (6th Gen)";
     
     if ([platform isEqualToString:@"i386"])         return @"Simulator";
     if ([platform isEqualToString:@"x86_64"])       return @"Simulator";
